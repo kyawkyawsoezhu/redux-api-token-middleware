@@ -1,6 +1,6 @@
 {
   "name": "redux-api-token-middleware",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A redux middleware for token base API endpoint, will help you request token and save it to local storage before fetching actual endpoint.",
   "main": "index.js",
   "scripts": {
