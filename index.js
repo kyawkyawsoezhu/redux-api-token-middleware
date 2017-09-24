@@ -80,11 +80,10 @@ export default config => store => next => action => {
     if(!isFetching){
       isFetching = true;
       tokenPromise = fetchAPIToken(
-        {
-          ...config, 
+        Object.assign({}, config, {
           grantType: action.payload.tokenGrantType,
           tokenStorageKey: `${config.tokenStorageKey}_for_${action.payload.tokenGrantType}`
-        }).then((response) => { isFetching = false; return response });
+        })).then((response) => { isFetching = false; return response });
     }
     tokenPromise.then((token) => {
       const accessToken = token.access_token;
