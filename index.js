@@ -81,17 +81,14 @@ export default config => store => next => action => {
       isFetching = true;
       tokenPromise = fetchAPIToken(
         Object.assign({}, config, {
-          grantType: action.payload.tokenGrantType,
-          tokenStorageKey: `${config.tokenStorageKey}_for_${action.payload.tokenGrantType}`
+          grantType: action.tokenGrantType,
+          tokenStorageKey: `${config.tokenStorageKey}_for_${action.tokenGrantType}`
         })).then((response) => { isFetching = false; return response });
     }
     tokenPromise.then((token) => {
       const accessToken = token.access_token;
-      const payload = request(Object.assign({}, action.payload, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }));
+      const headers = Object.assign({}, action.payload.headers, {Authorization: `Bearer ${accessToken}`});
+      const payload = request(Object.assign({}, action.payload, { headers }));
       const newAction = Object.assign({}, action, { payload });
       resolve(next(newAction));
     }).catch((reason) => {
