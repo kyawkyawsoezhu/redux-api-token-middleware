@@ -1,0 +1,30 @@
+{
+  "name": "redux-api-token-middleware",
+  "version": "0.0.1",
+  "description": "A redux middleware for token base API endpoint, will help you request token and save it to local storage before fetching actual endpoint.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kyawkyawsoezhu/redux-api-token-middleware.git"
+  },
+  "keywords": [
+    "redux",
+    "middleware",
+    "promise",
+    "async"
+  ],
+  "author": "Kyaw Kyaw Soe",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kyawkyawsoezhu/redux-api-token-middleware/issues"
+  },
+  "homepage": "https://github.com/kyawkyawsoezhu/redux-api-token-middleware#readme",
+  "dependencies": {
+    "axios": "^0.16.2",
+    "jsonwebtoken": "^8.0.1",
+    "moment": "^2.18.1"
+  }
+}
