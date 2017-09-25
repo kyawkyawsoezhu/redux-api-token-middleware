@@ -2,12 +2,6 @@ import jwt from 'jsonwebtoken';
 import moment from 'moment';
 import axios from 'axios';
 
-const request = axios.create({
-  headers: {
-    Accept: 'application/json',
-  }
-});
-
 const isTokenAboutToExpire = (token) => {
   const tokenPayload = jwt.decode(token.access_token);
   const expiry = moment.unix(tokenPayload.exp);
@@ -34,7 +28,7 @@ const saveToken = (key, token) => {
 };
 
 const requestNewToken = ({ accessTokenURL, grantType, clientID, clientSecret }) => (
-  request({
+  axios({
     url: accessTokenURL,
     method: 'POST',
     headers: {
@@ -57,7 +51,6 @@ const fetchAPIToken = config => (
   new Promise((resolve, reject) => {
     if (shouldRequestNewToken(config.tokenStorageKey)) {
       requestNewToken(config).then((response) => {
-        console.log('res',response.data);
         const token = response.data;
         saveToken(config.tokenStorageKey, token);
         resolve(token);
@@ -87,9 +80,15 @@ export default config => store => next => action => {
     }
     tokenPromise.then((token) => {
       const accessToken = token.access_token;
-      const headers = Object.assign({}, action.payload.headers, {Authorization: `Bearer ${accessToken}`});
-      const payload = request(Object.assign({}, action.payload, { headers }));
-      const newAction = Object.assign({}, action, { payload });
+      const apiRequest = axios.create({
+        baseURL: config.apiBaseURL,
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        }
+      });
+      const payload = apiRequest(Object.assign({}, action.payload));
+      const newAction = Object.assign({}, action, { payload, needToken: false });
       resolve(next(newAction));
     }).catch((reason) => {
       throw reason;

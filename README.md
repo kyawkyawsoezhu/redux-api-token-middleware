@@ -16,11 +16,9 @@ import apiTokenMiddleware from 'redux-api-token-middleware';
 const config = {
     clientID: '1', 
     clientSecret: 'secret',
-    redirectURL: 'http://www.example.com/callback',
-    authorizeURL: 'http://www.example.com/oauth/authorize',
     accessTokenURL: 'http://www.example.com/oauth/token',
-    urlResourceOwnerDetails: 'http://www.example.com/api/user',
     tokenStorageKey: 'token_key', // key to use for saving to browser local storage    
+    apiBaseURL: 'http://www.example.com/api',
 };
 
 const enhancers = applyMiddleware(apiTokenMiddleware(config));
