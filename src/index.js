@@ -1,18 +1,21 @@
 import jwt from 'jsonwebtoken';
 import moment from 'moment';
 import axios from 'axios';
+import SecureKeys from 'secure-keys';
+
 
 const isTokenAboutToExpire = (token) => {
   const tokenPayload = jwt.decode(token.access_token);
   const expiry = moment.unix(tokenPayload.exp);
-  return expiry.diff(moment(), 'seconds') < 300; 
+  return expiry.diff(moment(), 'seconds') < 300;
 };
 
-const retrieveTokenFromLocal = (key) => {
+const retrieveTokenFromLocal = (key, crypto) => {
   const storedValue = localStorage.getItem(key);
   if (storedValue) {
     try {
-      return JSON.parse(localStorage.getItem(key));
+      const decrypt = crypto.decrypt(JSON.parse(localStorage.getItem(key)));
+      return JSON.parse(decrypt.token);
     } catch (e) {
       if (e instanceof SyntaxError) {
         return null;
@@ -23,8 +26,9 @@ const retrieveTokenFromLocal = (key) => {
   return false;
 };
 
-const saveToken = (key, token) => {
-  localStorage.setItem(key, JSON.stringify(token));
+const saveToken = (key, token, crypto) => {
+  const encrypt = crypto.encrypt({ token: JSON.stringify(token) });
+  localStorage.setItem(key, JSON.stringify(encrypt));
 };
 
 const requestNewToken = ({ accessTokenURL, grantType, clientID, clientSecret }) => (
@@ -42,21 +46,21 @@ const requestNewToken = ({ accessTokenURL, grantType, clientID, clientSecret }) 
   })
 );
 
-const shouldRequestNewToken = (tokenStorageKey) => {
-  const token = retrieveTokenFromLocal(tokenStorageKey);
+const shouldRequestNewToken = (tokenStorageKey, crypto) => {
+  const token = retrieveTokenFromLocal(tokenStorageKey, crypto);
   return token ? isTokenAboutToExpire(token) : true;
 };
 
 const fetchAPIToken = config => (
   new Promise((resolve, reject) => {
-    if (shouldRequestNewToken(config.tokenStorageKey)) {
+    if (shouldRequestNewToken(config.tokenStorageKey, config.crypto)) {
       requestNewToken(config).then((response) => {
         const token = response.data;
-        saveToken(config.tokenStorageKey, token);
+        saveToken(config.tokenStorageKey, token, config.crypto);
         resolve(token);
       }).catch(reason => (reject(reason)));
     } else {
-      return resolve(retrieveTokenFromLocal(config.tokenStorageKey));
+      return resolve(retrieveTokenFromLocal(config.tokenStorageKey, config.crypto));
     }
   })
 );
@@ -65,18 +69,27 @@ let isFetching = false; // avoid requesting token multiple time
 let tokenPromise = {};
 
 export default config => store => next => action => {
+
   if (!action.needToken) {
     return next(action);
   }
 
   return new Promise((resolve) => {
-    if(!isFetching){
+    if (!isFetching) {
       isFetching = true;
+      const crypto = new SecureKeys({
+        secret: config.cryptionSecret
+      });
+
       tokenPromise = fetchAPIToken(
         Object.assign({}, config, {
           grantType: action.tokenGrantType,
-          tokenStorageKey: `${config.tokenStorageKey}_for_${action.tokenGrantType}`
-        })).then((response) => { isFetching = false; return response });
+          tokenStorageKey: `${config.tokenStorageKey}_for_${action.tokenGrantType}`,
+          crypto,
+        })).then((response) => {
+        isFetching = false;
+        return response
+      });
     }
     tokenPromise.then((token) => {
       const accessToken = token.access_token;
@@ -88,7 +101,7 @@ export default config => store => next => action => {
         }
       });
       const payload = apiRequest(Object.assign({}, action.payload));
-      const newAction = Object.assign({}, action, { payload, needToken: false });
+      const newAction = Object.assign({}, action, {payload, needToken: false});
       resolve(next(newAction));
     }).catch((reason) => {
       throw reason;

@@ -25,7 +25,8 @@
   "dependencies": {
     "axios": "^0.16.2",
     "jsonwebtoken": "^8.0.1",
-    "moment": "^2.18.1"
+    "moment": "^2.18.1",
+    "secure-keys": "^1.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
